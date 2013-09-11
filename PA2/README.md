@@ -31,7 +31,9 @@ Ensure that the latest version of the Developer Tools is installed.
 Instructions For Running Program
 --------------------------------
 >Menu system: Right-click on the canvas to bring up menu. To select option, left-click mouse.
+
 >Change cube rotation: Push SPACE BAR -or- left-click on canvas to change the direction of the cube's rotation.
+
 >Pause cube rotation: Push 'p' to pause or continue the cube's rotation.
 
 
