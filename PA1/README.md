@@ -26,3 +26,12 @@ Additional Notes For OSX Users
 
 Ensure that the latest version of the Developer Tools is installed.
 
+
+
+ASSIGNMENT CHANGES
+------------------
+
+*Removed hard-coded shaders from main and moved into a file
+*Created a shader loader that loads shaders from file
+*Cube now rotates in addition to orbiting
+

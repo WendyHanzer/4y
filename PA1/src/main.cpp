@@ -7,7 +7,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp> //Makes passing matrices to shaders easier
 
-
+#include<stdio.h>
+#include<stdlib.h>
+#include "shaderLoader.h"
 //--Data types
 //This object will define the attributes of a vertex(position, color, etc...)
 struct Vertex
@@ -244,10 +246,11 @@ bool initialize()
     //Shader Sources
     // Put these into files and write a loader in the future
     // Note the added uniform!
-    const char *vs =
+    char vertexFile[] = "default.vert";
+    char fragmentFile[] = "default.frag";
 
-
-    const char *fs =
+    const char *vs = readFile(vertexFile);
+    const char *fs = readFile(fragmentFile);
 
 
     //compile the shaders
