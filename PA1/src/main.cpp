@@ -246,8 +246,8 @@ bool initialize()
     //Shader Sources
     // Put these into files and write a loader in the future
     // Note the added uniform!
-    char vertexFile[] = "default.vert";
-    char fragmentFile[] = "default.frag";
+    char vertexFile[] = "../src/shaders/default.vert";
+    char fragmentFile[] = "../src/shaders/default.frag";
 
     const char *vs = readFile(vertexFile);
     const char *fs = readFile(fragmentFile);
