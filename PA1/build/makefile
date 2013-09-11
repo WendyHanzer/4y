@@ -14,4 +14,3 @@ all: ../bin/Matrix
 
 ../bin/Matrix: ../src/main.cpp
 	$(CC) $(CXXFLAGS) ../src/main.cpp -o ../bin/Matrix $(LIBS)
-
