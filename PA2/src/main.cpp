@@ -309,6 +309,9 @@ bool initialize()
                           {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}}
                         };
     // Create a Vertex Buffer object to store this vertex info on the GPU
+    
+    
+std::cout << sizeof(geometry);
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
     glBufferData(GL_ARRAY_BUFFER, sizeof(geometry), geometry, GL_STATIC_DRAW);
