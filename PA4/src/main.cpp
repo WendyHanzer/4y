@@ -6,6 +6,7 @@
 #include "shaderLoader.h"
 #include "modelLoader.h"
 
+
 //--Evil Global variables
 //Just for this example!
 int w = 640, h = 480;// Window size
@@ -15,6 +16,8 @@ GLuint vbo_geometry;// VBO handle for our geometry
 bool spin = true;
 int spinDirection = 1;
 int transDirection = 1;
+int geoSize;
+
 //uniform locations
 GLint loc_mvpmat;// Location of the modelviewprojection matrix in the shader
 
@@ -35,18 +38,20 @@ void reshape(int n_w, int n_h);
 void keyboard(unsigned char key, int x_pos, int y_pos);
 
 //--Resource management
-bool initialize();
+bool initialize(char *objectFile);
 void cleanUp();
 
 //--Random time things
 float getDT();
 std::chrono::time_point<std::chrono::high_resolution_clock> t1,t2;
 
-
 //--Main
 int main(int argc, char **argv)
 {
+    char *objectFile = argv[1];
+        
     // Initialize glut
+    
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(w, h);
@@ -73,7 +78,7 @@ int main(int argc, char **argv)
     glutKeyboardFunc(keyboard);// Called if there is keyboard input
 
     // Initialize all of our resources(shaders, geometry)
-    bool init = initialize();
+    bool init = initialize(objectFile);
     if(init)
     {
         t1 = std::chrono::high_resolution_clock::now();
@@ -133,6 +138,8 @@ void update()
 }
 
 
+
+
 void reshape(int n_w, int n_h)
 {
     w = n_w;
@@ -154,34 +161,20 @@ void keyboard(unsigned char key, int x_pos, int y_pos)
     }
 }
 
-bool initialize()
+bool initialize(char *objectFile)
 {
     // Initialize basic geometry and shaders for this example
 
     //this defines a cube, this is why a model loader is nice
     //you can also do this with a draw elements and indices, try to get that working
     
-    char OBJFile[] = "../src/table.obj";
-    Vertex *geometry = loadOBJ(OBJFile);
-    
-    int count = 0;
-    for(unsigned int i = 0; i < 80; i++)
-    {
-    count++;
-        std::cout << geometry[i].position[0] << ", "
-                    << geometry[i].position[1] << ", " 
-                    << geometry[i].position[2] << std::endl;
-               if(count == 3)
-                {
-                count = 0;
-                std::cout << std::endl;
-                    }
-    }
+    Vertex *geometry = loadOBJ( objectFile, geoSize );
+
     // Create a Vertex Buffer object to store this vertex info on the GPU
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(geometry), geometry, GL_STATIC_DRAW);
-
+    glBufferData(GL_ARRAY_BUFFER, geoSize, geometry, GL_STATIC_DRAW);
+std::cout << geoSize;
     //--Geometry done
 
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
