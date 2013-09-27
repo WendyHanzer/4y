@@ -30,5 +30,7 @@ Ensure that the latest version of the Developer Tools is installed.
 
 Instructions For Running Program
 --------------------------------
-There are no keys or movement in this program; the only thing to do is hit escape to quit the program.
+> The .obj file needs to be specified and passed in as an argument upon running the program.
+>   There are no keys or movement in this program; the only thing to do is hit escape to quit the program.
+> Project by Soohyun Yoon and Denver Liu
 
