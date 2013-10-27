@@ -1,0 +1,10 @@
+//input from the vertex shader
+varying vec2 TexCoord;   //texture coordinates
+
+//texture
+uniform sampler2D texUnit;
+
+void main() {
+  gl_FragColor = texture2D(texUnit, TexCoord);
+  gl_FragColor.a = 1.0;
+}

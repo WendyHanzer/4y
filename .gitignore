@@ -1,6 +1,6 @@
 *~
-*.obj
 Matrix
 *.o
 *.out
 *.swp
+Physics
