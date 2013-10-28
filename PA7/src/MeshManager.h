@@ -22,7 +22,7 @@ struct vertex
 {
     GLfloat position[3];
     GLfloat normal[3];
-    GLfloat texCoords[2];
+    GLfloat textureCoords[2];
 };
 
 

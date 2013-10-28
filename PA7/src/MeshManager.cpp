@@ -118,7 +118,7 @@ void MeshManager::initMesh( const aiMesh* mesh,
 void MeshManager::buildGeometry(vector<glm::vec3> &vertices, 
                                 vector<glm::vec3> &normals,  
                                 vector<glm::vec3>&faces,
-                                vector<glm::vec2> &texCoords, 
+                                vector<glm::vec2> &textureCoords, 
                                 vector<vertex> &geometry) 
 {
     vertex temp;
@@ -133,10 +133,10 @@ void MeshManager::buildGeometry(vector<glm::vec3> &vertices,
             }
 
             //texture coordinates
-            if(!texCoords.empty())
+            if(!textureCoords.empty())
             {
-                temp.texCoords[0] = texCoords[i[j]] [0];
-                temp.texCoords[1] = texCoords[i[j]] [1];
+                temp.textureCoords[0] = textureCoords[i[j]] [0];
+                temp.textureCoords[1] = textureCoords[i[j]] [1];
             }
             geometry.push_back(temp);
         }
