@@ -122,14 +122,14 @@ void ShaderManager::useProgram()
 }
 
 
-GLint ShaderManager::getAttributeLocation(char *attribName)
+GLint ShaderManager::getAttributeLocation(std::string attribName)
 {
-    return glGetAttribLocation( program, attribName );
+    return glGetAttribLocation( program, (char*)(attribName.c_str()) );
 }
 
-GLint ShaderManager::getUniformAttributeLocation(char *attribName)
+GLint ShaderManager::getUniformAttributeLocation(std::string attribName)
 {
-    return glGetUniformLocation( program, attribName );
+    return glGetUniformLocation( program, (char*)(attribName.c_str()) );
 }
 
 

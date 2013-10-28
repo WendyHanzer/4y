@@ -28,6 +28,12 @@ Physics::~Physics()
 }
 
 
+void Physics::simulate() 
+{
+    dynamicsWorld->stepSimulation(1/60.0f, 10);
+}
+
+
 void Physics::makeSphere(Mesh &sphere) 
 {
     //find the radius
@@ -38,10 +44,12 @@ void Physics::makeSphere(Mesh &sphere)
     sphereShape = new btSphereShape(radius);
 
     btDefaultMotionState* sphereMotionState =
-            new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(sphere.offset.x, sphere.offset.y, sphere.offset.z)));
+            new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(   sphere.offset.x, 
+                                                                                    sphere.offset.y, 
+                                                                                    sphere.offset.z)));
 
     btVector3 sphereInertia(0,0,0);
-    sphereShape->calculateLocalInertia(6.0,sphereInertia);
+    sphereShape->calculateLocalInertia(6.0, sphereInertia);
     
     //set sphere initial parameters
     btRigidBody::btRigidBodyConstructionInfo sphereRigidBodyCI( 6.0,                //mass
@@ -49,7 +57,7 @@ void Physics::makeSphere(Mesh &sphere)
                                                                 sphereShape,        //collision shape of body
                                                                 sphereInertia);     //local inertia
 
-    sphereRigidBodyCI.m_restitution = 1.0;
+    sphereRigidBodyCI.m_restitution = 0.0;
     sphereRigidBodyCI.m_friction = 0.5;
 
     simulationSphere = new btRigidBody(sphereRigidBodyCI);
@@ -85,7 +93,7 @@ void Physics::makeTable(Mesh &table)
                                                                 btVector3(0,0,0));  //local inertia
     
     
-    tableRigidBodyCI.m_restitution = 0.8f; //bounciness
+    tableRigidBodyCI.m_restitution = 0.8f;
 
     simulationTable = new btRigidBody(tableRigidBodyCI);
     dynamicsWorld->addRigidBody(simulationTable);
@@ -114,9 +122,14 @@ void Physics::makeWall(Mesh &wall)
 
     wallMotionState =  new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(wall.offset.x,
                                                                                              wall.offset.y,
-                                                                                             wall.offset.z) ) );
-    wallRigidBodyCI = new btRigidBody::btRigidBodyConstructionInfo(0, wallMotionState, rectangleShape, btVector3(0,0,0));
-    wallRigidBodyCI->m_restitution = 1.0f; //bounciness
+                                                                                             wall.offset.z)));
+                                                                                             
+    wallRigidBodyCI = new btRigidBody::btRigidBodyConstructionInfo( 0,                  //mass
+                                                                    wallMotionState,    //initial position
+                                                                    rectangleShape,     //collision shape of body
+                                                                    btVector3(0,0,0));  //local inertia
+                                                                    
+    wallRigidBodyCI->m_restitution = 1.0f;
     buffer= new btRigidBody((*wallRigidBodyCI));
 
     walls.push_back(buffer);
@@ -146,16 +159,20 @@ void Physics::makeCube(Mesh &cube)
 
     cubeMotionState =  new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(cube.offset.x,
                                                                                              cube.offset.y,
-                                                                                             cube.offset.z) ) );
-    cubeRigidBodyCI = new btRigidBody::btRigidBodyConstructionInfo(0, cubeMotionState, rectangleShape, btVector3(0,0,0));
+                                                                                             cube.offset.z)));
+                                                                                             
+    cubeRigidBodyCI = new btRigidBody::btRigidBodyConstructionInfo( 0,                  //mass
+                                                                    cubeMotionState,    //initial position
+                                                                    rectangleShape,     //collision shape of body
+                                                                    btVector3(0,0,0));  //local inertia
     cubeRigidBodyCI->m_restitution = 1.0f; //bounciness
     buffer= new btRigidBody((*cubeRigidBodyCI));
 
     buffer->setCollisionFlags(buffer->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
     buffer->setActivationState(DISABLE_DEACTIVATION);
 
-    simulationStaticCube = buffer;
-    dynamicsWorld->addRigidBody(simulationStaticCube);
+    simulationCube = buffer;
+    dynamicsWorld->addRigidBody(simulationCube);
 }
 
 void Physics::makeCylinder(Mesh &cylinder) 
@@ -173,25 +190,26 @@ void Physics::makeCylinder(Mesh &cylinder)
     cylinderShape = new btCylinderShape(btVector3(halfs.x, halfs.y, halfs.z));
 
     btDefaultMotionState* cylinderMotionState =
-            new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),
-                                                 btVector3(cylinder.offset.x, cylinder.offset.y, cylinder.offset.z))); //create the motion state with a starting point
-    btScalar mass = 20;
+            new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(  cylinder.offset.x, 
+                                                                                    cylinder.offset.y, 
+                                                                                    cylinder.offset.z))); //create the motion state with a starting point
+                                                 
     btVector3 cylinderInertia(0,0,0);
-    cylinderShape->calculateLocalInertia(mass,cylinderInertia);
-    btRigidBody::btRigidBodyConstructionInfo cylinderRigidBodyCI(mass,cylinderMotionState,cylinderShape,cylinderInertia);
+    cylinderShape->calculateLocalInertia(10.0, cylinderInertia);
+    btRigidBody::btRigidBodyConstructionInfo cylinderRigidBodyCI(   10.0,                   //mass
+                                                                    cylinderMotionState,    //initial position
+                                                                    cylinderShape,          //collision shape of body
+                                                                    cylinderInertia);       //local inertia
 
-    cylinderRigidBodyCI.m_restitution = 0.0;//bounciness of the puck
-    cylinderRigidBodyCI.m_friction = 0.5; //no friction
+    cylinderRigidBodyCI.m_restitution = 0.5;
+    cylinderRigidBodyCI.m_friction = 0.5;
 
     simulationCylinder = new btRigidBody(cylinderRigidBodyCI);
     simulationCylinder->setActivationState(DISABLE_DEACTIVATION);
     dynamicsWorld->addRigidBody(simulationCylinder);
 }
 
-void Physics::applyForceToSphere(float force_x, float force_z) 
-{
-    simulationSphere->applyForce(btVector3(force_x, 0.0, force_z), btVector3(0, 0, 0));
-}
+
 
 void Physics::moveCylinder(Mesh &cylinder, float offset_x, float offset_z) 
 {
@@ -206,11 +224,6 @@ void Physics::moveCylinder(Mesh &cylinder, float offset_x, float offset_z)
     cylinder.offset.y = trans.getOrigin().getY();
     cylinder.offset.z = trans.getOrigin().getZ();
     
-}    
-
-void Physics::simulate() 
-{
-    dynamicsWorld->stepSimulation(1/60.0f, 10);
 }
 
 

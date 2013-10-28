@@ -2,8 +2,8 @@
 CC=g++
 
 # Compiler flags
-LIBS= -lglut -lGLEW -lGL -lassimp -lBulletCollision -lBulletDynamics -lLinearMath
-CXXFLAGS= -g -Wall -std=c++0x -I/usr/include/bullet
+LIBS= -lglut -lGLEW -lGL -lassimp -lBulletDynamics -lBulletCollision  -lLinearMath
+CXXFLAGS= -g -Wall -std=c++0x -I/usr/local/include/bullet
 
 # variables
 OBJ= main.o  MeshManager.o ShaderManager.o Physics.o

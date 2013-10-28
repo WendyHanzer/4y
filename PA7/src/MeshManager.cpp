@@ -14,7 +14,7 @@ MeshManager::~MeshManager()
 {
 }
 
-//load a model from an obj file
+
 bool MeshManager::loadModel(string fileName, string name) 
 {
     vector<glm::vec3> vertices;
@@ -35,7 +35,6 @@ bool MeshManager::loadModel(string fileName, string name)
     {     
         return false;
     }
-
 
     for(unsigned int i = 0; i < model->mNumMeshes; i ++) 
     { 
@@ -117,7 +116,7 @@ void MeshManager::initMesh( const aiMesh* mesh,
 //build the geometry from the verticies and faces
 void MeshManager::buildGeometry(vector<glm::vec3> &vertices, 
                                 vector<glm::vec3> &normals,  
-                                vector<glm::vec3>&faces,
+                                vector<glm::vec3> &faces,
                                 vector<glm::vec2> &textureCoords, 
                                 vector<vertex> &geometry) 
 {
@@ -174,14 +173,17 @@ pair<glm::vec4, glm::vec4> MeshManager::findBounds(vector<glm::vec3> &vertices) 
   return pair<glm::vec4, glm::vec4>(min, max);
 }
 
-GLuint MeshManager::getHandle(string handleName) {
+GLuint MeshManager::getHandle(string handleName) 
+{
   return vbo_objects[handleName];
 }
 
-int MeshManager::getNumVertices(string handleName) {
+int MeshManager::getNumVertices(string handleName) 
+{
    return numVertices[handleName];
 }
 
-pair<glm::vec4, glm::vec4> MeshManager::getBounds(string handleName) {
+pair<glm::vec4, glm::vec4> MeshManager::getBounds(string handleName) 
+{
    return min_max[handleName];
 }

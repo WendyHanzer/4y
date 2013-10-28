@@ -18,10 +18,10 @@ class ShaderManager
         void linkProgramObject();                 //link program
         void useProgram();                        //activate program
 
-        GLint getAttributeLocation(char *attribName);
-        GLint getUniformAttributeLocation(char *attribName);
+        GLint getAttributeLocation(std::string abbribName);
+        GLint getUniformAttributeLocation(std::string attribName);
 
     private: 
-        GLuint program; //GLSL program handler
+        GLuint program; //program handler
 };
 #endif

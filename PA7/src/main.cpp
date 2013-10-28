@@ -21,14 +21,12 @@
 
 //CONSTS used for user interactions
 int w = 640, h = 480;// Window size
-int MOUSE_X = 0, MOUSE_Y = 0; //used for mouse interface
-float DELTA_X_CHANGE = 0.0, DELTA_Y_CHANGE = 0.0; //for mouse and keyboard interaction
-double X_CHANGE = 0.05, Y_CHANGE = 0.05; //angle step change in DELTA_X_CHANGE and DELTA_Y_CHANGE from keyboard
+
 
 
 MeshManager meshManager;
 ShaderManager *shaderManager;
-GLuint white_marble, black_marble;
+GLuint tanTex, green, blue;
 GLint textureCoord;
 GLint TexUnit;
 
@@ -40,8 +38,8 @@ GLint scene_position;
 //meshes
 Mesh table;
 Mesh sphere;
-Mesh wall_one;
-Mesh wall_two;
+Mesh wallOne;
+Mesh wallTwo;
 Mesh wall_three;
 Mesh wall_four;
 Mesh cube;
@@ -56,15 +54,14 @@ glm::mat4 mv;           //model-view matrix
 
 Physics m_Physics;
 
-float offsetx=0;
-float offsetz=0;
+float offsetx=0.0;
+float offsetz=0.0;
 
 //--GLUT Callbacks
 void render();
 void update();
 void reshape(int n_w, int n_h);
 void keyboard(unsigned char key, int x_pos, int y_pos);
-void specialKeyboard( int key, int x, int y );
 
 //--Resource management
 bool initialize();
@@ -85,14 +82,16 @@ int main(int argc, char **argv) {
     //Name and create the Window
     glutCreateWindow("PA8 - Bullet");
 
-    //initialize textures --> [NOTE] texture coordinates are retrieved from .obj files by the MeshManager class
-    char white_marble_file[] = "../textures/MarbleWhite.png";
-    char black_marble_file[] = "../textures/black_marble.jpg";
+    //initialize textures
+    char blueTexture[] = "../textures/blue.jpg";
+    char greenTexture[] = "../textures/green.jpg";
+    char tanTexture[] = "../textures/tan.jpg";
 
     //load textures
     Magick::InitializeMagick(*argv);
-    loadTexture(white_marble_file, white_marble);
-    loadTexture(black_marble_file, black_marble);
+    loadTexture(blueTexture, blue);
+    loadTexture(greenTexture, green);
+    loadTexture(tanTexture, tanTex);
 
     GLenum status = glewInit(); //check glut status
     if( status != GLEW_OK){
@@ -106,7 +105,6 @@ int main(int argc, char **argv) {
     glutReshapeFunc(reshape);   // Called if the window is resized
     glutIdleFunc(update);       // Called if there is nothing else to do
     glutKeyboardFunc(keyboard); // Called if there is keyboard input
-    glutSpecialFunc(specialKeyboard); // Called for special keyboard input (arrow keys)
     
     //Initialize all of our resources
     shaderManager = new ShaderManager();
@@ -117,40 +115,43 @@ int main(int argc, char **argv) {
     tempMesh.initializeMesh("sphere");
     tempMesh.initial_bound = meshManager.getBounds("sphere");   //set current position
     tempMesh.current_position = tempMesh.initial_bound;         //set current position
-    tempMesh.offset.y = 7;
-    tempMesh.offset.z = -5;
     sphere = tempMesh;
+    sphere.offset.y = table.current_position.second.y+1.5;
+    sphere.offset.z = -5;
+
     
     tempMesh.initializeMesh("cube");
     tempMesh.initial_bound = meshManager.getBounds("cube");     //set current position
     tempMesh.current_position = tempMesh.initial_bound;         //set current position
     cube = tempMesh;
-    cube.offset.y = table.current_position.second.y;            //top of the table
+    cube.offset.y = table.current_position.second.y+10;
+    cube.offset.z = 7;
+
 
     tempMesh.initializeMesh("cylinder");
     tempMesh.initial_bound = meshManager.getBounds("cylinder"); //set current position
     tempMesh.current_position = tempMesh.initial_bound;         //set current position
     cylinder = tempMesh;
-    cylinder.offset.y = table.current_position.second.y + 3;    //top of the table
+    cylinder.offset.y = table.current_position.second.y+2;
     cylinder.offset.z = 2;
-    cylinder.offset.x = -3;
+
     
-    tempMesh.initializeMesh("board");
-    tempMesh.initial_bound = meshManager.getBounds("board");
+    tempMesh.initializeMesh("table");
+    tempMesh.initial_bound = meshManager.getBounds("table");
     tempMesh.current_position = tempMesh.initial_bound;
     table = tempMesh;
     
     tempMesh.initializeMesh("wall one");
-    tempMesh.initial_bound = meshManager.getBounds("wall_one"); //set current position
+    tempMesh.initial_bound = meshManager.getBounds("wallOne"); //set current position
     tempMesh.current_position = tempMesh.initial_bound;         //set current position
-    wall_one = tempMesh;
-    wall_one.offset.y = table.current_position.second.y;        //top of the table
-    wall_one.offset.x = 9;
-    wall_two = wall_one;
-    wall_two.offset.x = -9;
+    wallOne = tempMesh;
+    wallOne.offset.y = table.current_position.second.y;        //top of the table
+    wallOne.offset.x = 9;
+    wallTwo = wallOne;
+    wallTwo.offset.x = -9;
 
     tempMesh.initializeMesh("wall two");
-    tempMesh.initial_bound = meshManager.getBounds("wall_two"); //set current position
+    tempMesh.initial_bound = meshManager.getBounds("wallTwo"); //set current position
     tempMesh.current_position = tempMesh.initial_bound;         //set current position
     wall_three = tempMesh;
     wall_three.offset.y = table.current_position.second.y;      //top of the table
@@ -161,13 +162,13 @@ int main(int argc, char **argv) {
 
 
     //update walls 
-    wall_one.model=glm::translate(glm::mat4(1.0f), glm::vec3(   wall_one.offset.x, 
-                                                                wall_one.offset.y, 
-                                                                wall_one.offset.z));
+    wallOne.model=glm::translate(glm::mat4(1.0f), glm::vec3(   wallOne.offset.x, 
+                                                                wallOne.offset.y, 
+                                                                wallOne.offset.z));
 
-    wall_two.model=glm::translate(glm::mat4(1.0f), glm::vec3(   wall_two.offset.x, 
-                                                                wall_two.offset.y, 
-                                                                wall_two.offset.z));
+    wallTwo.model=glm::translate(glm::mat4(1.0f), glm::vec3(   wallTwo.offset.x, 
+                                                                wallTwo.offset.y, 
+                                                                wallTwo.offset.z));
 
     wall_three.model=glm::translate(glm::mat4(1.0f), glm::vec3( wall_three.offset.x,
                                                                 wall_three.offset.y, 
@@ -182,8 +183,8 @@ int main(int argc, char **argv) {
     m_Physics.makeCube(cube);
     m_Physics.makeCylinder(cylinder);
     m_Physics.makeTable(table);
-    m_Physics.makeWall(wall_one);
-    m_Physics.makeWall(wall_two);
+    m_Physics.makeWall(wallOne);
+    m_Physics.makeWall(wallTwo);
     m_Physics.makeWall(wall_three);
     m_Physics.makeWall(wall_four);
 
@@ -267,10 +268,10 @@ void render()
 
     //set the textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, white_marble);
+    glBindTexture(GL_TEXTURE_2D, tanTex);
     glUniform1i(TexUnit, 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("board"));
+    glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("table"));
 
     //set pointers into the vbo for each of the attributes(position and normal)
     glVertexAttribPointer(  scene_position,     //location of attribute
@@ -287,7 +288,7 @@ void render()
                             sizeof(vertex), 
                             (void*)offsetof(vertex,textureCoords) );
                             
-    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("board"));//mode, starting index, count
+    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("table"));//mode, starting index, count
 
     //clean up
     glDisableVertexAttribArray(scene_position);
@@ -300,12 +301,13 @@ void render()
     /* SET UP SPHERE */
     ///////////////////
     
-    mv = view * table.model  *sphere.model; //model * view
+    //get model view matrix
+    mv = view * table.model * sphere.model;
 
     //enable the shader program
     shaderManager->useProgram();
 
-    //upload the matrix to the shader -- all the uniforms
+    //upload the matrix to the shader
     glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
     glUniformMatrix4fv(scene_p, 1, GL_FALSE, glm::value_ptr(projection));  //projection
 
@@ -315,7 +317,7 @@ void render()
 
     //set the textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, black_marble);
+    glBindTexture(GL_TEXTURE_2D, blue);
     glUniform1i(TexUnit, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("sphere"));
@@ -341,118 +343,16 @@ void render()
     glDisableVertexAttribArray(scene_position);
     glDisableVertexAttribArray(textureCoord);
     glDisable(GL_TEXTURE_2D);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-    //////////////////
-    /* SET UP WALLS */
-    //////////////////
     
-    mv = view * table.model  *wall_one.model; //model * view
-
-    //enable the shader program
-    shaderManager->useProgram();
-
-    //upload the matrix to the shader -- all the uniforms
-    glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
-    glUniformMatrix4fv(scene_p, 1, GL_FALSE, glm::value_ptr(projection));  //projection
-
-    //upload the lights
-    //set up the Vertex Buffer Object so it can be drawn
-    glEnableVertexAttribArray(scene_position);
-    glEnableVertexAttribArray(textureCoord);
-
-    //texture stuff
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, black_marble);
-    glUniform1i(TexUnit, 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("wall_one"));
-
-    //set pointers into the vbo for each of the attributes(position and normal)
-    glVertexAttribPointer(  scene_position,     //location of attribute
-                            3,                  //number of elements
-                            GL_FLOAT,           //type
-                            GL_FALSE,           //normalized?
-                            sizeof(vertex),     //stride
-                            0);                 //offset
-                            
-    glVertexAttribPointer(  textureCoord, 
-                            2 , 
-                            GL_FLOAT, 
-                            GL_FALSE, 
-                            sizeof(vertex), 
-                            (void*)offsetof(vertex,textureCoords) );
-                            
-    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("wall_one"));//mode, starting index, count
-
-    //wall two
     
-    mv = view * table.model  *wall_two.model; //model * view
-    //upload the matrix to the shader -- all the uniforms
-    glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
-    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("wall_one"));//mode, starting index, count
-
-    glDisableVertexAttribArray(scene_position);
-    glDisableVertexAttribArray(textureCoord);
-    glDisable(GL_TEXTURE_2D);
-
-
-    //wall three and four
-    mv = view*table.model*wall_three.model; //model * view
-
-    //enable the shader program
-    shaderManager->useProgram();
-
-    //upload the matrix to the shader -- all the uniforms
-    glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
-    glUniformMatrix4fv(scene_p, 1, GL_FALSE, glm::value_ptr(projection));  //projection
-
-    //upload the lights
-    //set up the Vertex Buffer Object so it can be drawn
-    glEnableVertexAttribArray(scene_position);
-    glEnableVertexAttribArray(textureCoord);
-
-    //texture stuff
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, black_marble);
-    glUniform1i(TexUnit, 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("wall_two"));
-
-    //set pointers into the vbo for each of the attributes(position and normal)
-    glVertexAttribPointer(  scene_position,     //location of attribute
-                            3,                  //number of elements
-                            GL_FLOAT,           //type
-                            GL_FALSE,           //normalized?
-                            sizeof(vertex),     //stride
-                            0);                 //offset
-                            
-    glVertexAttribPointer(  textureCoord, 
-                            2 , 
-                            GL_FLOAT, 
-                            GL_FALSE, 
-                            sizeof(vertex), 
-                            (void*)offsetof(vertex,textureCoords) );
-                            
-    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("wall_two"));//mode, starting index, count
-
-    //wall four
-    mv = view * table.model  *wall_four.model; //model * view
-    //upload the matrix to the shader -- all the uniforms
-    glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
-    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("wall_two"));//mode, starting index, count
-    glDisableVertexAttribArray(scene_position);
-    glDisableVertexAttribArray(textureCoord);
-    glDisable(GL_TEXTURE_2D);
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /////////////////
     /* SET UP CUBE */
     /////////////////
-    mv = view*table.model*cube.model; //model * view
+    
+    //get model view matrix
+    mv = view * table.model * cube.model;
 
     //enable the shader program
     shaderManager->useProgram();
@@ -468,7 +368,7 @@ void render()
 
     //set textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, black_marble);
+    glBindTexture(GL_TEXTURE_2D, blue);
     glUniform1i(TexUnit, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("static_cube"));
@@ -499,7 +399,9 @@ void render()
     /////////////////////
     /* SET UP CYLINDER */
     /////////////////////
-    mv = view*table.model*cylinder.model; //model * view
+    
+    //get model view matrix
+    mv = view*table.model*cylinder.model;
 
     //enable the shader program
     shaderManager->useProgram();
@@ -515,7 +417,7 @@ void render()
 
     //set textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, black_marble);
+    glBindTexture(GL_TEXTURE_2D, blue);
     glUniform1i(TexUnit, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("cylinder"));
@@ -542,6 +444,122 @@ void render()
     glDisableVertexAttribArray(textureCoord);
     glDisable(GL_TEXTURE_2D);
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    //////////////////
+    /* SET UP WALLS */
+    //////////////////
+    
+    //WALL ONE -------------------------------------------------------
+    
+    //get model view matrix
+    mv = view * table.model * wallOne.model;
+
+    //enable the shader program
+    shaderManager->useProgram();
+
+    //upload the matrix to the shader
+    glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
+    glUniformMatrix4fv(scene_p, 1, GL_FALSE, glm::value_ptr(projection));  //projection
+
+    //set up the Vertex Buffer Object so it can be drawn
+    glEnableVertexAttribArray(scene_position);
+    glEnableVertexAttribArray(textureCoord);
+
+    //set textures
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, green);
+    glUniform1i(TexUnit, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("wallOne"));
+
+    //set pointers into the vbo for each of the attributes(position and normal)
+    glVertexAttribPointer(  scene_position,     //location of attribute
+                            3,                  //number of elements
+                            GL_FLOAT,           //type
+                            GL_FALSE,           //normalized?
+                            sizeof(vertex),     //stride
+                            0);                 //offset
+                            
+    glVertexAttribPointer(  textureCoord, 
+                            2 , 
+                            GL_FLOAT, 
+                            GL_FALSE, 
+                            sizeof(vertex), 
+                            (void*)offsetof(vertex,textureCoords) );
+                            
+    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("wallOne"));//mode, starting index, count
+
+
+    //WALL TWO -------------------------------------------------------
+    
+    //get model view matrix
+    mv = view * table.model  * wallTwo.model; 
+    
+    //upload the matrix to the shader
+    glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
+    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("wallOne")); //mode, starting index, count
+
+    //clean up
+    glDisableVertexAttribArray(scene_position);
+    glDisableVertexAttribArray(textureCoord);
+    glDisable(GL_TEXTURE_2D);
+
+
+    //WALL THREE -------------------------------------------------------
+    
+    //get model view matrix
+    mv = view*table.model*wall_three.model; //model * view
+
+    //enable the shader program
+    shaderManager->useProgram();
+
+    //upload the matrix to the shader -- all the uniforms
+    glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
+    glUniformMatrix4fv(scene_p, 1, GL_FALSE, glm::value_ptr(projection));  //projection
+
+    //set up the Vertex Buffer Object so it can be drawn
+    glEnableVertexAttribArray(scene_position);
+    glEnableVertexAttribArray(textureCoord);
+
+    //set textures
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, green);
+    glUniform1i(TexUnit, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("wallTwo"));
+
+    //set pointers into the vbo for each of the attributes(position and normal)
+    glVertexAttribPointer(  scene_position,     //location of attribute
+                            3,                  //number of elements
+                            GL_FLOAT,           //type
+                            GL_FALSE,           //normalized?
+                            sizeof(vertex),     //stride
+                            0);                 //offset
+                            
+    glVertexAttribPointer(  textureCoord, 
+                            2 , 
+                            GL_FLOAT, 
+                            GL_FALSE, 
+                            sizeof(vertex), 
+                            (void*)offsetof(vertex,textureCoords) );
+                            
+    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("wallTwo"));//mode, starting index, count
+
+    //WALL FOUR -------------------------------------------------------
+    mv = view * table.model  *wall_four.model; //model * view
+    
+    //upload the matrix to the shader
+    glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
+    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("wallTwo")); //mode, starting index, count
+   
+    //clean up
+    glDisableVertexAttribArray(scene_position);
+    glDisableVertexAttribArray(textureCoord);
+    glDisable(GL_TEXTURE_2D);
+
+
     //swap the buffers
     glutSwapBuffers();
 }
@@ -549,13 +567,16 @@ void render()
 void update() {
 
     //total time
-    float dt = getDT();// if you have anything moving, use dt.
-    btTransform trans; //"Model Matrix" from Bullet
+    float dt = getDT(); // if you have anything moving, use dt.
+    btTransform trans;
 
     //simulate
     m_Physics.simulate();
 
-    //update sphere
+    ///////////////////
+    /* UPDATE SPHERE */
+    ///////////////////
+    
     m_Physics.simulationSphere->getMotionState()->getWorldTransform(trans);
 
     //update the x,y, and z
@@ -571,33 +592,24 @@ void update() {
     sphere.model=glm::rotate(sphere.model,radAngle, glm::vec3(axes.getX(),axes.getY(),axes.getZ() ));
     
 
-    //update cylinder
-    m_Physics.moveCylinder( cylinder, offsetx, offsetz );        
-    offsetx=0;
-    offsetz=0;
+    /////////////////////
+    /* UPDATE CYLINDER */
+    /////////////////////
+
+    m_Physics.moveCylinder( cylinder, offsetx, offsetz);
+    offsetx = 0.0;
+    offsetz = 0.0;
+
     m_Physics.simulationCylinder->getMotionState()->getWorldTransform(trans);
 
-    qt = trans.getRotation();
+
     axes = qt.getAxis();
-    radAngle = float((qt.getAngle())*180/PI);
-
-    cylinder.model=glm::translate(glm::mat4(1.0f), glm::vec3(cylinder.offset.x,
-                                                                          cylinder.offset.y,
-                                                                          cylinder.offset.z));
-    cylinder.model=glm::rotate(cylinder.model,radAngle, glm::vec3(axes.getX(),axes.getY(),axes.getZ() ));
 
 
-    //update the static cube's location
-    m_Physics.simulationStaticCube->getMotionState()->getWorldTransform(trans);
+    cylinder.model=glm::translate(glm::mat4(1.0f), glm::vec3(   cylinder.offset.x,
+                                                                cylinder.offset.y,
+                                                                cylinder.offset.z));
 
-    //update the x,y, and z
-    cube.offset.x = trans.getOrigin().getX();
-    cube.offset.y = trans.getOrigin().getY();
-    cube.offset.z = trans.getOrigin().getZ();
-
-    cube.model=glm::translate(glm::mat4(1.0f), glm::vec3(cube.offset.x,
-                                                                     cube.offset.y,
-                                                                     cube.offset.z));
 
     glutPostRedisplay();//call the display callback
 }
@@ -623,78 +635,70 @@ void keyboard(unsigned char key, int x_pos, int y_pos)
         case 27: //escape
             exit(0);
             break;
-    }
-    
-}
-
-void specialKeyboard( int key, int x, int y)
-{
-
-    // Special GLUT keys
-    switch(key)
-    {
-        case GLUT_KEY_LEFT: // left arrow key
-            offsetx=.5;
-            break;
-
-        case GLUT_KEY_UP: // up arrow key
-            offsetz=.5;
-            break;
-
-        case GLUT_KEY_RIGHT: // right arrow key
-            offsetx=-.5;
-            break;
-
-        case GLUT_KEY_DOWN: // down arrow key
-            offsetz=-.5;
+            
+        case 97: //a
+            offsetx += .25;
             break;
             
+        case 100: //d
+            offsetx -= .25;
+            break;
+            
+        case 119: //s
+            offsetz += .25;
+            break;
+            
+        case 115: //w
+            offsetz -= .25;
+            break;    
     }
-
-
 }
 
 
 bool initialize()
 {
     // Initialize basic geometry and shaders for this example
-    string sphereObj =     "../objectFiles/ball.obj";
-    string tableObj =      "../objectFiles/table.obj";
-    string wallOneObj =       "../objectFiles/walls_one.obj";
-    string wallTwoObj =     "../objectFiles/walls_two.obj";
-    string cubeObj =        "../objectFiles/static_cube.obj";
-    string cylinderObj =   "../objectFiles/dynamic_cylinder.obj";
+    string sphereObj  = "../objectFiles/sphere.obj";
+    string tableObj   = "../objectFiles/table.obj";
+    string wallOneObj = "../objectFiles/wallOne.obj";
+    string wallTwoObj = "../objectFiles/wallTwo.obj";
+    string cubeObj    = "../objectFiles/cube.obj";
+    string cylinderObj= "../objectFiles/cylinder.obj";
 
-    //load board
-    if(!meshManager.loadModel(tableObj, "board")) 
+    //load table
+    if(!meshManager.loadModel(tableObj, "table")) 
     {
         cout <<"[ERROR] " << tableObj  << " Model could not be loaded" << endl;
         return false;
     }
+    
+    //load walls
+    if(!meshManager.loadModel(wallOneObj, "wallOne")) 
+    {
+        cout << "[ERROR] " << wallOneObj << " Model could not be loaded" << endl;
+        return false;
+    }
+    if(!meshManager.loadModel(wallTwoObj, "wallTwo")) 
+    {
+        cout << "[ERROR] " << wallTwoObj << " Model could not be loaded" << endl;
+        return false;
+    }
+    
     //load ball
     if(!meshManager.loadModel(sphereObj, "sphere")) 
     {
         cout << "[ERROR] " << sphereObj << " Model could not be loaded" << endl;
         return false;
     }
-    //load walls
-    if(!meshManager.loadModel(wallOneObj, "wall_one")) 
-    {
-        cout << "[ERROR] " << wallOneObj << " Model could not be loaded" << endl;
-        return false;
-    }
-    if(!meshManager.loadModel(wallTwoObj, "wall_two")) 
-    {
-        cout << "[ERROR] " << wallTwoObj << " Model could not be loaded" << endl;
-        return false;
-    }
-    //load static cube
+
+    //load cube
     if(!meshManager.loadModel(cubeObj, "static_cube")) 
     {
         cout << "[ERROR] " << cubeObj << " Model could not be loaded" << endl;
         return false;
     }
-    //load dynamic cylinder
+    
+    //load cylinder
     if(!meshManager.loadModel(cylinderObj, "cylinder")) 
     {
         cout << "[ERROR] " << cylinderObj << " Model could not be loaded" << endl;
@@ -755,9 +759,9 @@ bool initialize()
     }
 
     //--Init the view and projection matrices
-    view = glm::lookAt( glm::vec3(30, 15, 30), //Eye Position 8 15
-                        glm::vec3(0.0, 0.0, 0.0), //Focus point
-                        glm::vec3(0.0, 1.0, 0.0)); //Positive Y is up
+    view = glm::lookAt( glm::vec3(0.0, 10.0, -8.0), //Eye Position
+                        glm::vec3(0.0, 0.0, 0.0),   //Focus point
+                        glm::vec3(0.0, 1.0, 0.0));  //Positive Y is up
 
     projection = glm::perspective( 90.0f, float(w)/float(h), 0.01f, 100.0f);
 
@@ -781,7 +785,9 @@ void loadTexture(const char* name, GLuint &textID)
     glBindTexture(GL_TEXTURE_2D, textID);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //or GL_NEAREST
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //or GL_NEAREST
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+    glTexImage2D(GL_TEXTURE_2D, 
+                 0, 
+                 GL_RGBA,
                  myImage->columns(),
                  myImage->rows(), 0,
                  GL_RGBA,

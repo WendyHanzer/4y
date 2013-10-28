@@ -5,14 +5,14 @@
 #include<GL/gl.h>
 #include<glm/glm.hpp>
 #include<iostream>
-#include<string>
-#include<map>
 #include<vector>
-
+#include<map>
+#include<string>
+#include<btBulletDynamicsCommon.h>
 #include<assimp/Importer.hpp>
 #include<assimp/postprocess.h>
 #include<assimp/scene.h>
-#include<btBulletDynamicsCommon.h>
+
 
 
 using namespace std;

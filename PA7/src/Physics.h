@@ -11,33 +11,34 @@ using namespace std;
 
 class Physics {
    public:
-     Physics(); //constructor
-     ~Physics(); //destructor
+        Physics(); //constructor
+        ~Physics(); //destructor
 
-     //add object to simulation world
-     void makeSphere(Mesh &); 
-     void makeCube(Mesh &);
-     void makeCylinder(Mesh &);
-     void makeTable(Mesh &); 
-     void makeWall(Mesh &);
+        //simulate
+        void simulate();
 
-     void applyForceToSphere(float force_x, float force_z);
-     void moveCylinder(Mesh &cylinder, float offset_x, float offset_z);
+        //create objects for world
+        void makeSphere(Mesh &); 
+        void makeCube(Mesh &);
+        void makeCylinder(Mesh &);
+        void makeTable(Mesh &); 
+        void makeWall(Mesh &);
 
-     //simulate
-     void simulate();
+        //misc physics stuff
+        void moveCylinder(Mesh &cylinder, float offset_x, float offset_z);
 
-     //rigid bodies references
-     btRigidBody *simulationSphere;
-     btRigidBody *simulationTable;
-     btRigidBody *simulationStaticCube; //static & animated
-     btRigidBody *simulationCylinder;  //dynamic object
-     vector<btRigidBody *> walls;
+        //bullet rigid body
+        btRigidBody *simulationSphere;
+        btRigidBody *simulationTable;
+        btRigidBody *simulationCube;
+        btRigidBody *simulationCylinder;
+        vector<btRigidBody *> walls;
      
-   private:
-      btDiscreteDynamicsWorld *dynamicsWorld;
-      btCollisionShape *sphereShape;
-      btCollisionShape *rectangleShape;
-      btCollisionShape *cylinderShape;
+    private:
+        //collision shapes for collision checking
+        btDiscreteDynamicsWorld *dynamicsWorld;
+        btCollisionShape *sphereShape;
+        btCollisionShape *rectangleShape;
+        btCollisionShape *cylinderShape;
 };
 #endif
