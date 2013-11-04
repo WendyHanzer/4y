@@ -730,29 +730,32 @@ void keyOperations(float dt)
     {
         float temp_z = (tableMesh.currentPos.first.z + tableMesh.currentPos.second.z)/2.0f;
         float board_halfs_z = abs(tableMesh.currentPos.second.z - temp_z);
-        if(!aiToggle) {
-            if(keyStates['d']) 
-            { 
-                if(DELTA_X_CHANGE_ai < tableMesh.currentPos.second.x - 3.2f)
-                    DELTA_X_CHANGE_ai += dt*10*sensitivity;
-            }
-            if(keyStates['a']) 
-            { 
-                if(DELTA_X_CHANGE_ai > tableMesh.currentPos.first.x + 3.2f)
-                    DELTA_X_CHANGE_ai -= dt*10*sensitivity;
-            }
+        if(!aiToggle) 
+        {
             if(keyStates['w']) 
             {
                 if(DELTA_Y_CHANGE_ai > tableMesh.currentPos.second.z - board_halfs_z)
                 //if(DELTA_Y_CHANGE_ai < tableMesh.currentPos.second.z - 3.2f)
                     DELTA_Y_CHANGE_ai += dt*10*sensitivity;
+            }            
+            if(keyStates['a']) 
+            { 
+                if(DELTA_X_CHANGE_ai > tableMesh.currentPos.first.x + 3.2f)
+                    DELTA_X_CHANGE_ai -= dt*10*sensitivity;
             }
+
             if(keyStates['s']) 
             { 
                 //if(DELTA_Y_CHANGE_ai < tableMesh.currentPos.second.z - 3.2f)
                 if(DELTA_Y_CHANGE_ai > tableMesh.currentPos.second.z - board_halfs_z)
                     DELTA_Y_CHANGE_ai -= dt*10*sensitivity;
             }
+            if(keyStates['d']) 
+            { 
+                if(DELTA_X_CHANGE_ai < tableMesh.currentPos.second.x - 3.2f)
+                    DELTA_X_CHANGE_ai += dt*10*sensitivity;
+            }           
+             
         }
         if(keyStates['q'])
         {
@@ -801,11 +804,11 @@ void keyOperations(float dt)
         //change the radius of the camera sphere
 	    if(specialKeyStates[GLUT_KEY_PAGE_UP]) 
 	    {  
-	        radius -= dt*25;
+	        radius -= dt*50;
 	    }
         if(specialKeyStates[GLUT_KEY_PAGE_DOWN]) 
         {   
-        	radius += dt*25;
+        	radius += dt*50;
 	    }
 	    //reset the camera to default view
 	    if(specialKeyStates[GLUT_KEY_HOME]) 
@@ -819,23 +822,20 @@ void keyOperations(float dt)
 
 void updateCamera(float dt) 
 {
-    // Restrict the angles within 0~360 deg (optional)
+
     if(theta > 360)
     theta = fmod((double)theta,360.0);
     if(phi > 360)
     phi = fmod((double)phi,360.0);
-
-    // Spherical to Cartesian conversion.   
+   
     eyeX = radius * sin(theta*M_PI) * sin(phi*M_PI);
     eyeY = radius * cos(theta*M_PI);
     eyeZ = radius * sin(theta*M_PI) * cos(phi*M_PI);
 
-    // Reduce theta slightly to obtain another point on the same longitude line on the sphere.
     float tempX = radius * sin(theta*M_PI-dt) * sin(phi*M_PI);
     float tempY = radius * cos(theta*M_PI-dt);
     float tempZ = radius * sin(theta*M_PI-dt) * cos(phi*M_PI);
 
-    // Connect these two points to obtain the camera's up vector.
     upX = tempX - eyeX;
     upY = tempY - eyeY;
     upZ = tempZ - eyeZ;
@@ -1146,11 +1146,11 @@ void createMenus()
     glutAddMenuEntry("Mong", 4);
 
     int _ai_difficulty_menu = glutCreateMenu(aiDifficultyMenu);
-    glutAddMenuEntry("Level 1", 1);
-    glutAddMenuEntry("Level 2", 2);
-    glutAddMenuEntry("Level 3", 3);
-    glutAddMenuEntry("Level 4", 4);
-    glutAddMenuEntry("Level 5", 5);
+    glutAddMenuEntry("Difficulty 1", 1);
+    glutAddMenuEntry("Difficulty 2", 2);
+    glutAddMenuEntry("Difficulty 3", 3);
+    glutAddMenuEntry("Difficulty 4", 4);
+    glutAddMenuEntry("Difficulty 5", 5);
 
     glutCreateMenu(mainMenu);
     glutAddSubMenu("Themes", _themes_menu);
@@ -1198,10 +1198,10 @@ void aiDifficultyMenu(int choice)
     	  aiSpeed = 0.25;
         break;
       case 4:
-    	  aiSpeed = 0.30;
+    	  aiSpeed = 0.35;
         break;
       case 5:
-    	  aiSpeed = 0.40;
+    	  aiSpeed = 0.50;
         break;
     }
 }

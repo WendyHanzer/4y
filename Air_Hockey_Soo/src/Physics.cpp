@@ -146,16 +146,6 @@ void Physics::createTable(Mesh &tableMesh)
     tableRigidBodyCI->m_restitution = 1.0f;
     buffer= new btRigidBody((*tableRigidBodyCI));
     table.push_back(buffer);
-
-    //--TABLE SURFACE collision info
-    tempMotionState  = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, tableMesh.currentPos.first.y, 0)));
-    tableRigidBodyCI = new btRigidBody::btRigidBodyConstructionInfo(0,                  //mass
-                                                                    tempMotionState,    //motion state
-                                                                    tableSurface,       //collision shape
-                                                                    btVector3(0,0,0));  //local inertia
-    buffer= new btRigidBody((*tableRigidBodyCI));
-    table.push_back(buffer);
-
     
     for(auto i : table)
     {
