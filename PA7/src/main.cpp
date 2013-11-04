@@ -658,12 +658,12 @@ void keyboard(unsigned char key, int x_pos, int y_pos)
 bool initialize()
 {
     // Initialize basic geometry and shaders for this example
-    string sphereObj  = "../objectFiles/sphere.obj";
-    string tableObj   = "../objectFiles/table.obj";
+    string sphereObj  = "../objectFiles/puck.obj";
+    string tableObj   = "../objectFiles/Board_one.obj";
     string wallOneObj = "../objectFiles/wallOne.obj";
     string wallTwoObj = "../objectFiles/wallTwo.obj";
     string cubeObj    = "../objectFiles/cube.obj";
-    string cylinderObj= "../objectFiles/cylinder.obj";
+    string cylinderObj= "../objectFiles/paddle.obj";
 
     //load table
     if(!meshManager.loadModel(tableObj, "table")) 
@@ -759,7 +759,7 @@ bool initialize()
     }
 
     //--Init the view and projection matrices
-    view = glm::lookAt( glm::vec3(0.0, 10.0, -8.0), //Eye Position
+    view = glm::lookAt( glm::vec3(0.0, 50.0, -25.0), //Eye Position
                         glm::vec3(0.0, 0.0, 0.0),   //Focus point
                         glm::vec3(0.0, 1.0, 0.0));  //Positive Y is up
 
