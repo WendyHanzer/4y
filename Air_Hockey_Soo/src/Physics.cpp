@@ -83,7 +83,7 @@ void Physics::createTable(Mesh &tableMesh)
     halfTableWall_Z.z = 0.50;
     
     //goal walls
-    halfGoalWall.x = ((tableHalf.x * 2 )/8);
+    halfGoalWall.x = ((tableHalf.x * 2 )/6);
     halfGoalWall.y = 1.0;
     halfGoalWall.z = 0.25;
     

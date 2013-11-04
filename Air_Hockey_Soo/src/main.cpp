@@ -26,6 +26,7 @@ float DELTA_X_CHANGE = 0.0, DELTA_Y_CHANGE = -33.0; //for mouse and keyboard int
 float DELTA_X_CHANGE_ai = 0.0, DELTA_Y_CHANGE_ai = 33.0;
 double X_CHANGE = 0.5, Y_CHANGE = 0.5; //step change for paddle using keyboard input
 int PLAYER_SCORE = 0, AI_SCORE = 0, WIN_SCORE = 11;
+int theme = 0;
 
 //--Camera Variables
 float upX, upY, upZ;
@@ -56,9 +57,9 @@ MeshManager meshManager;
 ShaderManager *shaderManager;
 
 //--Textures Handles
-GLuint green;
-GLuint blue;
 GLuint black;
+GLuint colorful;
+GLuint tempTheme;
 GLint textureCoord;
 GLint textureUnit;
 vector<GLuint> themes;
@@ -100,6 +101,10 @@ void specialUp(int key, int x_pos, int y_pos);
 //--Resource Management
 bool initialize();
 void loadTexture(const char* name, GLuint &textID);
+void createMenus();
+void mainMenu(int);
+void themesMenu(int);
+void aiDifficultyMenu(int);
 
 //--Game Functions
 void keyOperations(float dt);
@@ -125,20 +130,25 @@ int main(int argc, char **argv)
     
     //Name and create the Window
     glutCreateWindow("Air Hockey");
-
+    createMenus();
     //initialize textures
-    string themeFileName[] = {  "...",
-                                "...",
-                                "..." };
+    string themeFileName[] = {  "../textures/galaxy.png",
+                                "../textures/minion.png",
+                                "../textures/claptrap.png",
+                                "../textures/mong.png" };
                                 
-    char blueTexture[] = "../textures/blue.jpg";
-    char greenTexture[] = "../textures/green.jpg";
+    char colorTexture[] = "../textures/color.jpg";
     char blackTexture[] = "../textures/black.jpg";
 
     //load textures
     Magick::InitializeMagick(*argv);
-    loadTexture(blueTexture, blue);
-    loadTexture(greenTexture, green);
+    
+    for(int i = 0; i < 4; i++ )
+    {
+        loadTexture(themeFileName[i].c_str(), tempTheme);
+        themes.push_back(tempTheme);
+    }
+    loadTexture(colorTexture, colorful);
     loadTexture(blackTexture, black);
 
     GLenum status = glewInit(); //check glut status
@@ -242,7 +252,7 @@ void render()
 
     //set the textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, black);
+    glBindTexture(GL_TEXTURE_2D, themes[theme]);
     glUniform1i(textureUnit, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("table"));
@@ -340,7 +350,7 @@ void render()
 
     //set textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, green);
+    glBindTexture(GL_TEXTURE_2D, colorful);
     glUniform1i(textureUnit, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("walls"));
@@ -384,7 +394,7 @@ void render()
 
     //set the textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, green);
+    glBindTexture(GL_TEXTURE_2D, black);
     glUniform1i(textureUnit, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("puck"));
@@ -433,7 +443,7 @@ void render()
 
     //set textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, blue);
+    glBindTexture(GL_TEXTURE_2D, colorful);
     glUniform1i(textureUnit, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("paddle"));
@@ -465,7 +475,7 @@ void render()
     
     //set textures
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, blue);
+    glBindTexture(GL_TEXTURE_2D, colorful);
     glUniform1i(textureUnit, 0);
     
     //--DRAW PLAYER PADDLE
@@ -1013,6 +1023,14 @@ void resetGame()
 
 void pauseGame() 
 {
+    if(pauseFlag) 
+    {
+        glutChangeToMenuEntry(5,"Pause Game", 4);
+    }
+    else 
+    {
+        glutChangeToMenuEntry(5,"Resume Game", 4);
+    }
     pauseFlag = !pauseFlag;
     keyStates['p'] = false;
     glutPostRedisplay();
@@ -1062,24 +1080,25 @@ void updateAI()
     if(centerPuck.z > 0 && centerPuck.z < 35 && distance > 4 )
     {
         //move horizontal
-        if(paddleAIMesh.offset.x < puckMesh.offset.x) {
-            if(DELTA_X_CHANGE_ai > tableMesh.currentPos.first.x + 3.2f)
+        if(paddleAIMesh.offset.x < puckMesh.offset.x) 
+        {
+            //if(DELTA_X_CHANGE_ai > tableMesh.currentPos.first.x + 3.2f)
                 DELTA_X_CHANGE_ai -= aiSpeed;
         }
         else if(paddleAIMesh.offset.x > puckMesh.offset.x) 
         {
-            if(DELTA_X_CHANGE_ai < tableMesh.currentPos.second.x - 3.2f)
+            //if(DELTA_X_CHANGE_ai < tableMesh.currentPos.second.x - 3.2f)
                 DELTA_X_CHANGE_ai += aiSpeed;
         }
         //move vertical
 		if(paddleAIMesh.offset.z < puckMesh.offset.z) 
 		{
-			if(DELTA_Y_CHANGE_ai > tableMesh.currentPos.first.z + 3.2f)
+			//if(DELTA_Y_CHANGE_ai > tableMesh.currentPos.first.z + 3.2f)
 			    DELTA_Y_CHANGE_ai += aiSpeed;
 		}
 		else if(paddleAIMesh.offset.z > puckMesh.offset.z) 
 		{
-			if(DELTA_Y_CHANGE_ai < tableMesh.currentPos.second.z - 3.2f)
+			//if(DELTA_Y_CHANGE_ai < tableMesh.currentPos.second.z - 3.2f)
 			    DELTA_Y_CHANGE_ai -= aiSpeed;
 		}
     }
@@ -1117,3 +1136,119 @@ float getDT()
 }
 
 
+void createMenus() 
+{
+
+    int _themes_menu = glutCreateMenu(themesMenu);
+    glutAddMenuEntry("Galaxy", 1);    
+    glutAddMenuEntry("Despicable Me", 2);
+    glutAddMenuEntry("Minion", 3);
+    glutAddMenuEntry("Mong", 4);
+
+    int _ai_difficulty_menu = glutCreateMenu(aiDifficultyMenu);
+    glutAddMenuEntry("Level 1", 1);
+    glutAddMenuEntry("Level 2", 2);
+    glutAddMenuEntry("Level 3", 3);
+    glutAddMenuEntry("Level 4", 4);
+    glutAddMenuEntry("Level 5", 5);
+
+    glutCreateMenu(mainMenu);
+    glutAddSubMenu("Themes", _themes_menu);
+    glutAddSubMenu("AI Difficulty", _ai_difficulty_menu);
+
+    glutAddMenuEntry("Pause Game", 1);
+    glutAddMenuEntry("AI->Human", 2);
+    glutAddMenuEntry("Restart", 3);
+    glutAddMenuEntry("Quit Game", 4);
+
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
+void themesMenu(int choice) 
+{
+    switch(choice) 
+    {
+      case 1:
+        theme = 0;
+        break;
+      case 2:
+        theme = 1;
+        break;
+      case 3:
+        theme = 2;
+        break;
+      case 4:
+        theme = 3;
+        break;
+    }
+}
+
+
+void aiDifficultyMenu(int choice) 
+{
+    switch(choice) 
+    {
+      case 1:
+    	  aiSpeed = 0.1;
+        break;
+      case 2:
+    	  aiSpeed = 0.20;
+        break;
+      case 3:
+    	  aiSpeed = 0.25;
+        break;
+      case 4:
+    	  aiSpeed = 0.30;
+        break;
+      case 5:
+    	  aiSpeed = 0.40;
+        break;
+    }
+}
+
+void mainMenu(int choice) 
+{
+    switch(choice) 
+    {
+        case 1:
+            pauseGame();
+            break;
+        case 2:
+            if (aiToggle) 
+            {
+	            aiToggle = false;
+	            glutChangeToMenuEntry(4,"Human->AI", 2);
+	        }
+        	else 
+        	{
+            	aiToggle = true;
+            	glutChangeToMenuEntry(4,"AI->Human", 2);
+        	}
+            break;
+        case 3:
+            resetGame();
+            break;
+        case 4:
+            exit(0);
+            break;
+   }
+   
+    glutPostRedisplay();
+}    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
