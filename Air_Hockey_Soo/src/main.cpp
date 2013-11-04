@@ -25,25 +25,22 @@ int MOUSE_X = 0, MOUSE_Y = 0;   //used for mouse interface
 float DELTA_X_CHANGE = 0.0, DELTA_Y_CHANGE = -33.0; //for mouse and keyboard interaction
 float DELTA_X_CHANGE_ai = 0.0, DELTA_Y_CHANGE_ai = 33.0;
 double X_CHANGE = 0.5, Y_CHANGE = 0.5; //step change for paddle using keyboard input
-int PLAYER_SCORE = 0, AI_SCORE = 0, WIN_SCORE = 7;
+int PLAYER_SCORE = 0, AI_SCORE = 0, WIN_SCORE = 11;
 
 //--Camera Variables
 float upX, upY, upZ;
 float eyeX, eyeY, eyeZ;
 float theta, phi, radius;
 
-//--Game Control Variables
-GLuint ai_control = 0;
-GLfloat ai_paddle_speed = 0.15;
-float message_time = 0;
-float message_x = -100;
-std::string message = "";
+//--AI Settings
+bool aiToggle = true;
+GLfloat aiSpeed = 0.15;
 
 //--Keyboard Variables
 bool* specialKeyStates = new bool[255]; //used for special keypresses
 bool* keyStates = new bool[255];
 int sensitivity = 25;
-bool pauseGame = false;
+bool pauseFlag = false;
 
 // Paddle control variables
 glm::vec3 forceVector = glm::vec3(0,0,0);
@@ -65,7 +62,6 @@ GLuint black;
 GLint textureCoord;
 GLint textureUnit;
 vector<GLuint> themes;
-int THEME = 2;
 
 //--Shader Variables
 GLint scene_mv;
@@ -104,22 +100,16 @@ void specialUp(int key, int x_pos, int y_pos);
 //--Resource Management
 bool initialize();
 void loadTexture(const char* name, GLuint &textID);
-void inGoal();
-void createMenus();
-void mainMenu(int id);
-void themesMenu(int id);
-void lightMenu(int id);
-void aiLevelMenu(int id);
-void updateAI();
 
-//--Helper functions
+//--Game Functions
 void keyOperations(float dt);
 void updateCamera(float dt);
 void defaultCamera();
+void inGoal();
+void updateAI();
+void pauseGame();
 void resetPuck();
 void resetGame();
-void pauseTheGame();
-
 
 //--Random Time Things
 float getDT();
@@ -191,14 +181,14 @@ int main(int argc, char **argv)
     tempMesh.initialPos = meshManager.getBounds("ground");
     tempMesh.currentPos = tempMesh.initialPos;
     groundMesh = tempMesh;
-    groundMesh.offset.y = -15.0;
+    groundMesh.offset.y = -12.0;
     groundMesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(groundMesh.offset.x, groundMesh.offset.y, groundMesh.offset.z));
 
     tempMesh.initializeMesh("puck");
     tempMesh.initialPos = meshManager.getBounds("puck");
     tempMesh.currentPos = tempMesh.initialPos;
     puckMesh = tempMesh;
-    puckMesh.offset.x = tableMesh.currentPos.first.y+0.6;
+    puckMesh.offset.y = tableMesh.currentPos.first.y+1.0;
     puckMesh.offset.z = -5.0;
 
     tempMesh.initializeMesh("paddle");
@@ -315,7 +305,7 @@ void render()
                             0);                 //offset
                             
     glVertexAttribPointer(  textureCoord, 
-                            2 , 
+                            2, 
                             GL_FLOAT, 
                             GL_FALSE, 
                             sizeof(vertex), 
@@ -467,7 +457,7 @@ void render()
     glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("paddle"));//mode, starting index, count
     
     //get model view matrix
-    mv = view * tableMesh.model * paddlePlayerMesh.model;  
+    mv = view * tableMesh.model * paddleAIMesh.model;  
       
     //upload the matrix to the shader -- all the uniforms
     glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
@@ -494,16 +484,16 @@ void update()
 {
     float dt = getDT(); // if you have anything moving, use dt.
     keyOperations(dt/4);
-    if(!pauseGame) 
+    if(!pauseFlag) 
     {
         //AI
-        if(ai_control == 0)
+        if(aiToggle)
         {
 		    updateAI();
         }
         
         //--Update the view matrix
-        updateCamera(dt/4);
+        updateCamera(dt/2);
         view = glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(upX, upY, upZ));
 
         //update puck and paddle locations
@@ -555,7 +545,6 @@ void update()
     
   */      
         myPhysics.paddle_Player->getMotionState()->getWorldTransform(translate);
-        
         
         paddlePlayerMesh.offset.x = translate.getOrigin().getX();
         paddlePlayerMesh.offset.y = translate.getOrigin().getY();
@@ -611,28 +600,31 @@ void mouse(int button, int state, int x, int y)
 
 void mouseOnTheMove(int x, int y) 
 {
-    if(!pauseGame) 
+    if(!pauseFlag) 
     {
-    
         float temp_z = (tableMesh.currentPos.first.z + tableMesh.currentPos.second.z)/2.0f;
         float board_halfs_z = abs(tableMesh.currentPos.second.z - temp_z);
 
-            if(MOUSE_X > x) {
+            if(MOUSE_X > x) 
+            {
                 if(DELTA_X_CHANGE > tableMesh.currentPos.first.x + 3.2f)
-                    DELTA_X_CHANGE -= abs(float(MOUSE_X - x))/9.0f;
+                    DELTA_X_CHANGE -= abs(float(MOUSE_X - x))/10.0f;
             }
-           else {
+           else 
+           {
                 if(DELTA_X_CHANGE < tableMesh.currentPos.second.x - 3.2f)
-                    DELTA_X_CHANGE += abs(float(MOUSE_X - x))/9.0f;
+                    DELTA_X_CHANGE += abs(float(MOUSE_X - x))/10.0f;
            }
 
-           if(MOUSE_Y > y) {
+           if(MOUSE_Y > y) 
+           {
                if(DELTA_Y_CHANGE < tableMesh.currentPos.second.z - board_halfs_z)
-                    DELTA_Y_CHANGE += abs(float(MOUSE_Y - y))/9.0f;
+                    DELTA_Y_CHANGE += abs(float(MOUSE_Y - y))/10.0f;
            }
-           else {
+           else 
+           {
                if(DELTA_Y_CHANGE > tableMesh.currentPos.first.z + 3.2f)
-                     DELTA_Y_CHANGE -= abs(float(MOUSE_Y - y))/9.0f;
+                     DELTA_Y_CHANGE -= abs(float(MOUSE_Y - y))/10.0f;
            }
 
         MOUSE_Y = y;
@@ -707,7 +699,7 @@ void keyOperations(float dt)
     }
     if(keyStates['p'])
     {
-        pauseTheGame();
+        pauseGame();
     }
     if(keyStates['r']) 
     {
@@ -724,11 +716,11 @@ void keyOperations(float dt)
             sensitivity--;
     }
     
-    if(!pauseGame) 
+    if(!pauseFlag) 
     {
         float temp_z = (tableMesh.currentPos.first.z + tableMesh.currentPos.second.z)/2.0f;
         float board_halfs_z = abs(tableMesh.currentPos.second.z - temp_z);
-        if(ai_control == 1) {
+        if(!aiToggle) {
             if(keyStates['d']) 
             { 
                 if(DELTA_X_CHANGE_ai < tableMesh.currentPos.second.x - 3.2f)
@@ -741,8 +733,8 @@ void keyOperations(float dt)
             }
             if(keyStates['w']) 
             {
-                //if(DELTA_Y_CHANGE_ai > tableMesh.currentPos.second.z - board_halfs_z)
-                if(DELTA_Y_CHANGE_ai < tableMesh.currentPos.second.z - 3.2f)
+                if(DELTA_Y_CHANGE_ai > tableMesh.currentPos.second.z - board_halfs_z)
+                //if(DELTA_Y_CHANGE_ai < tableMesh.currentPos.second.z - 3.2f)
                     DELTA_Y_CHANGE_ai += dt*10*sensitivity;
             }
             if(keyStates['s']) 
@@ -752,26 +744,29 @@ void keyOperations(float dt)
                     DELTA_Y_CHANGE_ai -= dt*10*sensitivity;
             }
         }
-        if(keyStates['q']){
-        	if (ai_control == 0){
-        		ai_control = 1;
+        if(keyStates['q'])
+        {
+        	if(aiToggle)
+        	{
+        		aiToggle = false;
             }
             else
             {
-        		ai_control = 0;
+        		aiToggle = true;
         	}
         }
 
-        if(ai_control == 0) {
+        if(aiToggle) 
+        {
             if(keyStates['j'])
             {
-            	if(ai_paddle_speed < 0.35)
-            		ai_paddle_speed += 0.02;
+            	if(aiSpeed < 0.35)
+            		aiSpeed += 0.02;
             }
             if(keyStates['k'])
             {
-            	if (ai_paddle_speed >0.05)
-            		ai_paddle_speed -= 0.02;
+            	if (aiSpeed >0.05)
+            		aiSpeed -= 0.02;
             }
        }
 
@@ -966,7 +961,7 @@ void inGoal() {
     {
         bool reset = false;
         bool player_goal = false;
-        if(puckMesh.currentPos.first.z > tableMesh.currentPos.second.z + 5) 
+        if(puckMesh.currentPos.first.z > tableMesh.currentPos.second.z) 
         {
             PLAYER_SCORE++;
             reset = true;
@@ -984,7 +979,8 @@ void inGoal() {
         }
         if(reset) 
         {
-            if(AI_SCORE < WIN_SCORE && PLAYER_SCORE < WIN_SCORE) {
+            if(AI_SCORE < WIN_SCORE && PLAYER_SCORE < WIN_SCORE) 
+            {
             
                 resetPuck();
                 if(player_goal)
@@ -1015,22 +1011,14 @@ void resetGame()
      resetPuck();
 }
 
-void pauseTheGame() 
+void pauseGame() 
 {
-    if(pauseGame) 
-    {
-        glutChangeToMenuEntry(5,"Pause Game", 4);
-    }
-    else 
-    {
-        glutChangeToMenuEntry(5,"Resume Game", 4);
-    }
-    pauseGame = !pauseGame;
+    pauseFlag = !pauseFlag;
     keyStates['p'] = false;
     glutPostRedisplay();
 }
 
-//load an image for texture
+
 void loadTexture(const char* name, GLuint &textID) 
 {
     Magick::Image* myImage = new Magick::Image( name );
@@ -1064,140 +1052,57 @@ void updateAI()
     centerAIPaddle.y = (paddleAIMesh.currentPos.first.y + paddleAIMesh.currentPos.second.y)/2.0f;
     centerAIPaddle.z = (paddleAIMesh.currentPos.first.z + paddleAIMesh.currentPos.second.z)/2.0f;
 
-    float distance = std::sqrt((centerPuck.x-centerAIPaddle.x)* (centerPuck.x-centerAIPaddle.x)
-    		+(centerPuck.y-centerAIPaddle.y)*(centerPuck.y-centerAIPaddle.y)
-    		+(centerPuck.z-centerAIPaddle.z)*(centerPuck.z-centerAIPaddle.z));
+    float distance = std::sqrt( (centerPuck.x-centerAIPaddle.x) * 
+                                (centerPuck.x-centerAIPaddle.x) +
+                                (centerPuck.y-centerAIPaddle.y) *
+                                (centerPuck.y-centerAIPaddle.y) +
+                                (centerPuck.z-centerAIPaddle.z) *
+                                (centerPuck.z-centerAIPaddle.z));
 
     if(centerPuck.z > 0 && centerPuck.z < 35 && distance > 4 )
     {
         //move horizontal
         if(paddleAIMesh.offset.x < puckMesh.offset.x) {
-            //if(DELTA_X_CHANGE_ai > board_mesh.currentPos.first.x + 3.2f)
-               DELTA_X_CHANGE_ai -= ai_paddle_speed;
+            if(DELTA_X_CHANGE_ai > tableMesh.currentPos.first.x + 3.2f)
+                DELTA_X_CHANGE_ai -= aiSpeed;
         }
         else if(paddleAIMesh.offset.x > puckMesh.offset.x) 
         {
-            //if(DELTA_X_CHANGE_ai < board_mesh.currentPos.second.x - 3.2f)
-               DELTA_X_CHANGE_ai += ai_paddle_speed;
+            if(DELTA_X_CHANGE_ai < tableMesh.currentPos.second.x - 3.2f)
+                DELTA_X_CHANGE_ai += aiSpeed;
         }
         //move vertical
 		if(paddleAIMesh.offset.z < puckMesh.offset.z) 
 		{
-			//if(DELTA_Y_CHANGE_ai > board_mesh.currentPos.first.z + 3.2f)
-			   DELTA_Y_CHANGE_ai += ai_paddle_speed;
+			if(DELTA_Y_CHANGE_ai > tableMesh.currentPos.first.z + 3.2f)
+			    DELTA_Y_CHANGE_ai += aiSpeed;
 		}
 		else if(paddleAIMesh.offset.z > puckMesh.offset.z) 
 		{
-			//if(DELTA_Y_CHANGE_ai < board_mesh.currentPos.second.z - 3.2f)
-			   DELTA_Y_CHANGE_ai -= ai_paddle_speed;
+			if(DELTA_Y_CHANGE_ai < tableMesh.currentPos.second.z - 3.2f)
+			    DELTA_Y_CHANGE_ai -= aiSpeed;
 		}
     }
-    else {
+    else 
+    {
     	if(paddleAIMesh.offset.x < 0)
     	{
-    		DELTA_X_CHANGE_ai -= ai_paddle_speed;
-    	}else{
-    		DELTA_X_CHANGE_ai += ai_paddle_speed;
+    		DELTA_X_CHANGE_ai -= aiSpeed;
+    	}
+    	else
+    	{
+    		DELTA_X_CHANGE_ai += aiSpeed;
     	}
 
-		if (paddleAIMesh.offset.z < 28) {
-			DELTA_Y_CHANGE_ai += ai_paddle_speed;
-		} else {
-			DELTA_Y_CHANGE_ai -= ai_paddle_speed;
+		if (paddleAIMesh.offset.z < 28) 
+		{
+			DELTA_Y_CHANGE_ai += aiSpeed;
+		} 
+		else 
+		{
+			DELTA_Y_CHANGE_ai -= aiSpeed;
 		}
     }
-}
-
-void createMenus() 
-{
-
-    int _themes_menu = glutCreateMenu(themesMenu);
-    glutAddMenuEntry("DISNEY", 1);
-    glutAddMenuEntry("MATRIX", 2);
-    glutAddMenuEntry("TECHNO", 3);
-    glutAddMenuEntry("WOOD", 4);
-
-    int _ai_level_menu = glutCreateMenu(aiLevelMenu);
-    glutAddMenuEntry("Level 1", 1);
-    glutAddMenuEntry("Level 2", 2);
-    glutAddMenuEntry("Level 3", 3);
-    glutAddMenuEntry("Level 4", 4);
-    glutAddMenuEntry("Level 5", 5);
-
-    glutCreateMenu(mainMenu);
-    glutAddSubMenu("THEMES", _themes_menu);
-    glutAddSubMenu("AI Level", _ai_level_menu);
-
-
-    glutAddMenuEntry("AI->Human", 2);
-    glutAddMenuEntry("Pause Game", 4);
-    glutAddMenuEntry("Restart", 3);
-    glutAddMenuEntry("QUIT", 1);
-
-    glutAttachMenu(GLUT_RIGHT_BUTTON);
-}
-
-void themesMenu(int id) {
-    switch(id) {
-      case 1:
-        THEME = 0;
-        break;
-      case 2:
-        THEME = 1;
-        break;
-      case 3:
-        THEME = 2;
-        break;
-      case 4:
-        THEME= 3;
-        break;
-    }
-}
-
-
-void aiLevelMenu(int id) {
-    switch(id) {
-      case 1:
-    	  ai_paddle_speed = 0.1;
-        break;
-      case 2:
-    	  ai_paddle_speed = 0.20;
-        break;
-      case 3:
-    	  ai_paddle_speed = 0.25;
-        break;
-      case 4:
-    	  ai_paddle_speed = 0.30;
-        break;
-      case 5:
-    	  ai_paddle_speed = 0.40;
-        break;
-    }
-}
-
-void mainMenu(int id) {
-    switch(id) {
-        case 1:
-            exit(0);
-            break;
-        case 2:
-            if (ai_control == 0) {
-	            ai_control = 1;
-	            glutChangeToMenuEntry(4,"Human->AI", 2);
-	            }
-        	else {
-            	ai_control = 0;
-            	glutChangeToMenuEntry(4,"AI->Human", 2);
-        	}
-            break;
-        case 3:
-            resetGame();
-            break;
-        case 4:
-            pauseTheGame();
-            break;
-   }
-    glutPostRedisplay();
 }
 
 

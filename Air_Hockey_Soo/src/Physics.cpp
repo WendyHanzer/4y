@@ -5,7 +5,7 @@
 const btScalar PUCK_MASS = 1500;    //mass of puck
 btVector3 puckInertia(0,0,0);       //inertia of puck
 const float MAX_VELOCITY = 40.0f;   //max puck velcity
-const float MIN_VELOCITY = 40.0f;   //min puck velocity
+const float MIN_VELOCITY = -40.0f;  //min puck velocity
 const float TIMESTEP = 1/60.0f;     //use for time ticks
 const int SUBSTEP = 100;            //max steps per tick
 
@@ -74,16 +74,16 @@ void Physics::createTable(Mesh &tableMesh)
     tableHalf.z = 0.25;
     
     //table walls
-    halfTableWall_X.x = 0.25;
+    halfTableWall_X.x = 0.50;
     halfTableWall_X.y = 50.0;
     halfTableWall_X.z = 50.0;
     
     halfTableWall_Z.x = 50.0;
     halfTableWall_Z.y = 50.0;
-    halfTableWall_Z.z = 0.25;
+    halfTableWall_Z.z = 0.50;
     
     //goal walls
-    halfGoalWall.x = ((tableHalf.x * 2 )/6);
+    halfGoalWall.x = ((tableHalf.x * 2 )/8);
     halfGoalWall.y = 1.0;
     halfGoalWall.z = 0.25;
     
