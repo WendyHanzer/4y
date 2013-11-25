@@ -28,17 +28,49 @@ double X_CHANGE = 0.05, Y_CHANGE = 0.05; //step change for paddle using keyboard
 int NUMBER_OF_WINS;
 bool paused = false;
 
+int AmbientDefault = 2.8;
+
+struct Light
+{
+    GLfloat specularVec[3];
+    GLfloat ambientVec[3];
+    GLfloat diffuseVec[3];
+    GLfloat lightVec[3];
+    
+    void Init();
+
+};
+
+void Light::Init()
+{
+    specularVec[0] = 2.0;
+    specularVec[1] = 2.0;
+    specularVec[2] = 2.0;
+    
+    ambientVec[0] = AmbientDefault;
+    ambientVec[1] = AmbientDefault;
+    ambientVec[2] = AmbientDefault;
+    
+    diffuseVec[0] = 1.8;
+    diffuseVec[1] = 1.8;
+    diffuseVec[2] = 1.8;
+    
+    lightVec[0] = 10.0;
+    lightVec[1] = 10.0;
+    lightVec[2] = 20.0;
+}
+
 
 //--Managers
 MeshManager meshManager;
 ShaderManager *shaderManager;
-vector<ShaderManager *>ShaderManager_holes(3); //three kinds of holes: start, end, trap
+ShaderManager *shaderManager_holes; //three kinds of holes: start, end, trap
 int holeType; //used for coloring holes
 int level; //what the current difficulty level is
 vector<int> numOfHoles; //used for game levels
 
 //--Textures Handles
-GLuint black_marble, white_marble, metal;
+GLuint black_marble, white_marble, metal, black_solid, red_solid, green_solid;
 GLint textureCoord;
 GLint textureUnit;
 
@@ -51,6 +83,7 @@ GLint scene_normal;
 //--Meshes
 Mesh boardMesh;
 Mesh sphereMesh;
+
 vector<Mesh> myMaze; //maze
 vector< vector<bool> > maze; //boolean array
 vector<Maze_Holes> mazeHoles; //first entry is the start, last entry is the ends
@@ -68,6 +101,14 @@ vector<GLint> loc_positions(3); //loc positions
 GLint loc_mvpmat;// Location of the modelviewprojection matrix in the shader
 GLint loc_mvpmat_sphere;
 vector<GLint> loc_mvpmats(3); //three mvpmats for the maze holes
+
+// --Lighting
+GLint light_position;////////////// ADD
+GLint diffuse_data;////////////// ADD
+GLint specular_data;////////////// ADD
+GLint ambient_data;////////////// ADD
+
+Light Lighting;////////////// ADD
 
 //--Physics handle
 Physics myPhysics;
@@ -118,7 +159,9 @@ int main(int argc, char **argv)
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(w, h);
-    
+        
+    Lighting.Init();////////////// ADD
+
     // Name and create the Window
     glutCreateWindow("LABYRINTH PROGRAM");
 
@@ -135,6 +178,9 @@ int main(int argc, char **argv)
     char metal_file[] = "../textures/metal.png";
     char white_marble_file[] = "../textures/MarbleWhite.png";
     char black_marble_file[] = "../textures/gold.png";
+    char red_solid_file[] = "../textures/red.png";
+    char green_solid_file[] = "../textures/green.png";
+    char black_solid_file[] = "../textures/black.png";
 
     //load textures
     Magick::InitializeMagick(*argv);
@@ -142,6 +188,9 @@ int main(int argc, char **argv)
     loadTexture(metal_file, metal);
     loadTexture(black_marble_file, black_marble);
     loadTexture(white_marble_file, white_marble);
+    loadTexture(red_solid_file, red_solid);
+    loadTexture(black_solid_file, black_solid);
+    loadTexture(green_solid_file, green_solid);
 
     GLenum status = glewInit(); //check glut status
     if( status != GLEW_OK)
@@ -174,6 +223,7 @@ int main(int argc, char **argv)
     tempMesh.initial_bound = meshManager.getBounds("sphere");
     tempMesh.current_position = tempMesh.initial_bound;
     sphereMesh = tempMesh;
+
 
     //initialize maze
     buildMaze(  abs(boardMesh.initial_bound.second.z - boardMesh.initial_bound.first.z) - 1,
@@ -212,6 +262,12 @@ void render()
     //enable the shader program
     shaderManager->useProgram();
 
+    glUniform3fv(ambient_data, 1, Lighting.ambientVec);
+    glUniform3fv(diffuse_data, 1, Lighting.diffuseVec);
+    glUniform3fv(specular_data, 1, Lighting.specularVec);
+    glUniform3fv(light_position, 1, Lighting.lightVec);
+
+
     //upload the matrix to the shader
     glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
     glUniformMatrix4fv(scene_p, 1, GL_FALSE, glm::value_ptr(projection));  //projection
@@ -221,7 +277,7 @@ void render()
 
     //set up the Vertex Buffer Object so it can be drawn
     glEnableVertexAttribArray(scene_position);
-    //glEnableVertexAttribArray(scene_normal);
+    glEnableVertexAttribArray(scene_normal);
     glEnableVertexAttribArray(textureCoord);
 
     //set the textures
@@ -238,14 +294,14 @@ void render()
                             GL_FALSE,           //normalized?
                             sizeof(vertex),     //stride
                             0);                 //offset
-    /*
+    
     glVertexAttribPointer(  scene_normal, 
                             3,
                             GL_FLOAT, 
                             GL_FALSE, 
                             sizeof(vertex), 
                             (void*)offsetof(vertex,normal) );
-    */                       
+                     
     glVertexAttribPointer(  textureCoord, 
                             2 , 
                             GL_FLOAT, 
@@ -253,11 +309,11 @@ void render()
                             sizeof(vertex), 
                             (void*)offsetof(vertex,textureCoords) );
                             
-    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("table"));//mode, starting index, count
+    glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("board"));//mode, starting index, count
 
     //clean up
     glDisableVertexAttribArray(scene_position);
-    //glDisableVertexAttribArray(scene_normal);
+    glDisableVertexAttribArray(scene_normal);
     glDisableVertexAttribArray(textureCoord);
     glDisable(GL_TEXTURE_2D);
     
@@ -281,7 +337,7 @@ void render()
 
     //set up the Vertex Buffer Object so it can be drawn
     glEnableVertexAttribArray(scene_position);
-    //glEnableVertexAttribArray(scene_normal);
+    glEnableVertexAttribArray(scene_normal);
     glEnableVertexAttribArray(textureCoord);
 
     //set the textures
@@ -298,14 +354,14 @@ void render()
                             GL_FALSE,           //normalized?
                             sizeof(vertex),     //stride
                             0);                 //offset
-    /*
+    
     glVertexAttribPointer(  scene_normal, 
                             3,
                             GL_FLOAT, 
                             GL_FALSE, 
                             sizeof(vertex), 
                             (void*)offsetof(vertex,normal) );
-    */                       
+                        
     glVertexAttribPointer(  textureCoord, 
                             2 , 
                             GL_FLOAT, 
@@ -317,7 +373,7 @@ void render()
 
     //clean up
     glDisableVertexAttribArray(scene_position);
-    //glDisableVertexAttribArray(scene_normal);
+    glDisableVertexAttribArray(scene_normal);
     glDisableVertexAttribArray(textureCoord);
     glDisable(GL_TEXTURE_2D);
 
@@ -342,7 +398,7 @@ void render()
 
         //set up the Vertex Buffer Object so it can be drawn
         glEnableVertexAttribArray(scene_position);
-        //glEnableVertexAttribArray(scene_normal);
+        glEnableVertexAttribArray(scene_normal);
         glEnableVertexAttribArray(textureCoord);
 
         //set the textures
@@ -350,7 +406,7 @@ void render()
         glBindTexture(GL_TEXTURE_2D, black_marble);
         glUniform1i(textureUnit, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("board"));
+        glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("maze wall"));
 
         //set pointers into the vbo for each of the attributes(position and normal)
         glVertexAttribPointer(  scene_position,     //location of attribute
@@ -359,14 +415,14 @@ void render()
                                 GL_FALSE,           //normalized?
                                 sizeof(vertex),     //stride
                                 0);                 //offset
-        /*
+        
         glVertexAttribPointer(  scene_normal, 
                                 3,
                                 GL_FLOAT, 
                                 GL_FALSE, 
                                 sizeof(vertex), 
                                 (void*)offsetof(vertex,normal) );
-        */                       
+                             
         glVertexAttribPointer(  textureCoord, 
                                 2 , 
                                 GL_FLOAT, 
@@ -374,11 +430,11 @@ void render()
                                 sizeof(vertex), 
                                 (void*)offsetof(vertex,textureCoords) );
                                 
-        glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("table"));//mode, starting index, count
+        glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("maze wall"));//mode, starting index, count
 
         //clean up
         glDisableVertexAttribArray(scene_position);
-        //glDisableVertexAttribArray(scene_normal);
+        glDisableVertexAttribArray(scene_normal);
         glDisableVertexAttribArray(textureCoord);
         glDisable(GL_TEXTURE_2D);       
     } 
@@ -407,27 +463,63 @@ void render()
             holeType = 2;
         }
         //enable shader program
-        ShaderManager_holes[holeType]->useProgram();
+        shaderManager->useProgram();
 
-        //upload the matrix to the shader
-        glUniformMatrix4fv(loc_mvpmats[holeType], 1, GL_FALSE, glm::value_ptr(mvp));
+    //upload the matrix to the shader
+    glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
+    glUniformMatrix4fv(scene_p, 1, GL_FALSE, glm::value_ptr(projection));  
 
         //set up the Vertex Buffer Object so it can be drawn
-        glEnableVertexAttribArray(loc_positions[holeType]);
+        glEnableVertexAttribArray(scene_position);
+       // glEnableVertexAttribArray(loc_positions[holeType]);
+        glEnableVertexAttribArray(scene_normal);
+        glEnableVertexAttribArray(textureCoord);
+        
+        //set the textures
+        glActiveTexture(GL_TEXTURE0);
+        
+        if(holeType == 0)
+        {
+            glBindTexture(GL_TEXTURE_2D, green_solid);    
+        }
+        else if(holeType == 1)
+        {
+            glBindTexture(GL_TEXTURE_2D, red_solid);
+        }
+        else
+        {
+            glBindTexture(GL_TEXTURE_2D, black_solid);
+        }
+        
+        glUniform1i(textureUnit, 0);
         glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("hole"));
 
         //set pointers into the vbo for each of the attributes(position and color)
-        glVertexAttribPointer(  loc_positions[holeType], 
+        glVertexAttribPointer(  scene_position,
                                 3,
                                 GL_FLOAT, 
                                 GL_FALSE, 
                                 sizeof(vertex), 
                                 0);
-
+        glVertexAttribPointer(  scene_normal, 
+                                3,
+                                GL_FLOAT, 
+                                GL_FALSE, 
+                                sizeof(vertex), 
+                                (void*)offsetof(vertex,normal) );
+        glVertexAttribPointer(  textureCoord, 
+                                2 , 
+                                GL_FLOAT, 
+                                GL_FALSE, 
+                                sizeof(vertex), 
+                                (void*)offsetof(vertex,textureCoords) );
+                                
         glDrawArrays(GL_TRIANGLES, 0, meshManager.getNumVertices("hole"));//mode, starting index, count
         
         //clean up
-        glDisableVertexAttribArray(loc_positions[holeType]);       
+        glDisableVertexAttribArray(scene_position);  
+        glDisableVertexAttribArray(textureCoord);  
+        glDisableVertexAttribArray(scene_normal);
     }
       
     //swap the buffers
@@ -542,7 +634,6 @@ bool initialize()
     string mazeObj  = "../objectFiles/maze.obj";
     string holeObj  = "../objectFiles/hole.obj";
 
-
     //load board
     if(!meshManager.loadModel(boardObj, "board")) 
     {
@@ -572,11 +663,6 @@ bool initialize()
     //Shader Sources
     char vertexshader[] = "../src/VertexShader.txt";
     char fragmentshader[] = "../src/FragmentShader.txt";
-    char fragmentshader_sphere[] = "../src/fragmentShader_sphere.txt";
-    vector<char *> hole_shaders = { "../src/vertexShader_hole_start.txt", 
-                                    "../src/vertexShader_hole_end.txt", 
-                                    "../src/vertexShader_hole_trap.txt"};
-
 
     //initialize shaders
     if(!shaderManager->loadVertexShader(vertexshader))
@@ -627,38 +713,65 @@ bool initialize()
         return false;
     }
 
-
-    //shaders for the holes
-    for(unsigned int i = 0; i < hole_shaders.size(); i ++) 
+    //////////////// ADDED
+    light_position = shaderManager->getUniformAttributeLocation("lightPosition");
+    if(light_position == -1) 
     {
-        ShaderManager_holes[i] = new ShaderManager(); //create shader manager
-
-        if(!ShaderManager_holes[i]->loadVertexShader( hole_shaders[i]))
-        {
-            return false;
-        }
-        if(!ShaderManager_holes[i]->loadFragmentShader(fragmentshader_sphere))
-        {
-            return false;
-        }
-         
-
-        ShaderManager_holes[i]->linkProgramObject();
-        loc_positions[i] = ShaderManager_holes[i]->getAttributeLocation("v_position");
-        if(loc_positions[i] == -1) 
-        {
-              std::cerr << "[F] POSITION NOT FOUND " << std::endl;
-              return false;
-        }
-
-        loc_mvpmats[i] = ShaderManager_holes[i]->getUniformAttributeLocation("mvpMatrix");
-        if(loc_mvpmats[i] == -1) 
-        {
-              std::cerr << "[F] MVPMATRIX NOT FOUND " << std::endl;
-              return false;
-        }
+        std::cerr << "[F] LIGHTPOSITION ATTRIBUTE NOT FOUND " << std::endl;
+        return false;
     }
-
+    //////////////// ADDED
+    diffuse_data = shaderManager->getUniformAttributeLocation("Diffuse_Data");
+    if(diffuse_data == -1) 
+    {
+        std::cerr << "[F] DIFFUSE ATTRIBUTE NOT FOUND " << std::endl;
+        return false;
+    }
+    //////////////// ADDED
+    specular_data = shaderManager->getUniformAttributeLocation("Specular_Data");
+    if(specular_data == -1) 
+    {
+        std::cerr << "[F] SPECULAR ATTRIBUTE NOT FOUND " << std::endl;
+        return false;
+    }
+    //////////////// ADDED
+    ambient_data = shaderManager->getUniformAttributeLocation("ambient");
+    if(ambient_data == -1) 
+    {
+        std::cerr << "[F] AMBIENT ATTRIBUTE NOT FOUND " << std::endl;
+        return false;
+    }
+        
+    
+    //////////////// ADDED
+    light_position = shaderManager->getUniformAttributeLocation("lightPosition");
+    if(light_position == -1) 
+    {
+        std::cerr << "[F] LIGHTPOSITION ATTRIBUTE NOT FOUND " << std::endl;
+        return false;
+    }
+    //////////////// ADDED
+    diffuse_data = shaderManager->getUniformAttributeLocation("Diffuse_Data");
+    if(diffuse_data == -1) 
+    {
+        std::cerr << "[F] DIFFUSE ATTRIBUTE NOT FOUND " << std::endl;
+        return false;
+    }
+    //////////////// ADDED
+    specular_data = shaderManager->getUniformAttributeLocation("Specular_Data");
+    if(specular_data == -1) 
+    {
+        std::cerr << "[F] SPECULAR ATTRIBUTE NOT FOUND " << std::endl;
+        return false;
+    }
+    //////////////// ADDED
+    ambient_data = shaderManager->getUniformAttributeLocation("ambient");
+    if(ambient_data == -1) 
+    {
+        std::cerr << "[F] AMBIENT ATTRIBUTE NOT FOUND " << std::endl;
+        return false;
+    }
+    
     //--Init the view and projection matrices
     view = glm::lookAt( glm::vec3(0.0, 18.0, -8.0), //Eye Position 25 -8
                         glm::vec3(0.0, 0.0, 0.0), //Focus point
@@ -723,7 +836,16 @@ void ambientLightMenu(int id)
 {
    switch(id) 
    {
-
+        case 1:
+            Lighting.ambientVec[0] = AmbientDefault;
+            Lighting.ambientVec[1] = AmbientDefault;
+            Lighting.ambientVec[2] = AmbientDefault;
+            break;
+        case 2:
+            Lighting.ambientVec[0] = 0.5;
+            Lighting.ambientVec[1] = 0.5;
+            Lighting.ambientVec[2] = 0.5;
+            break;
    }
 }
 
@@ -809,7 +931,7 @@ void buildMaze(int xSize, int ySize)
     for(unsigned int y = 0; y < maze.size(); y++) 
     {
         maze[y].resize(ySize);
-        for(unsigned int x = 0; x < maze[y].size(); x ++) 
+        for(unsigned int x = 0; x < maze[y].size(); x++) 
         {
            maze[y][x] = false;
         }
@@ -935,7 +1057,7 @@ void buildMaze(int xSize, int ySize)
                 {
                     temp_holes.offset.x = ( (float)i - (boardMesh.initial_bound.second.x - 0.5f));
                     temp_holes.offset.z = ((float)j - (boardMesh.initial_bound.second.z - 1.2f) );
-                    temp_holes.offset.y = -0.65f;
+                    temp_holes.offset.y = -.65f;
                     temp_holes.model=glm::translate(glm::mat4(1.0f), glm::vec3( temp_holes.offset.x, temp_holes.offset.y, temp_holes.offset.z) );
                     
                     //update the current positions
@@ -963,7 +1085,7 @@ void buildMaze(int xSize, int ySize)
     //set the end position
     temp_holes.offset.x = ( (float)last_position.x - (boardMesh.initial_bound.second.x - 0.5f));
     temp_holes.offset.z = ((float)last_position.y - (boardMesh.initial_bound.second.z - 1.2f) );
-    temp_holes.offset.y = -0.65f;
+    temp_holes.offset.y = -.65f;
     temp_holes.model=glm::translate(glm::mat4(1.0f), glm::vec3( temp_holes.offset.x, temp_holes.offset.y, temp_holes.offset.z) );
     
     //update the current positions
