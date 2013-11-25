@@ -1,0 +1,51 @@
+
+//inputs from the application
+attribute vec3 v_position;
+attribute vec2 v_texCoord;
+attribute vec3 v_normal;  // surface normal vector
+
+uniform mat4 Projection;
+uniform mat4 ModelView;
+uniform vec3 lightPosition; // Make this cursor position
+
+uniform vec3 Diffuse_Data;
+uniform vec3 Specular_Data;
+//attribute float specular_power;
+uniform vec3 ambient;
+
+varying vec3 f_Diffuse_Data;
+varying vec3 f_Specular_Data;
+varying float f_specular_power;
+varying vec3 f_ambient;
+varying vec2 TexCoord;
+
+// Output to fragment shader
+varying vec3 N;
+varying vec3 L;
+varying vec3 V;
+
+void main() {
+    vec4 position = vec4(v_position.xyz, 1.0);
+    // Normal in view space
+    vec4 P = ModelView * position;
+    
+    // Normal in view space
+    N = mat3(ModelView[0].xyz, ModelView[1].xyz, ModelView[2].xyz) * v_normal;
+    
+    //N = ModelView.toMat3 * normal;
+    // View-space light vector
+    L = lightPosition - P.xyz;
+    // View vector
+    V = -P.xyz;
+    // clip space position of each vertex
+    gl_Position = Projection * P;
+
+    f_Diffuse_Data = Diffuse_Data;
+    f_Specular_Data = Specular_Data;
+    f_specular_power = 128.0;
+    f_ambient = ambient;
+  
+    TexCoord = v_texCoord.xy;
+
+  
+}
