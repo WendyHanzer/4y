@@ -594,16 +594,16 @@ void keyboard(unsigned char key, int x_pos, int y_pos)
     if(key == 27) { //ESC
         exit(0);
     }
-    else if(key == 108) { //'l' -- about the y axis
+    else if(key == 'd' || key == 'D') { // about the y axis
         DELTA_X_CHANGE += X_CHANGE;
     }
-    else if(key == 114) { //'r' -- about the y axis
+    else if(key == 'a' || key=='A') { // about the y axis
         DELTA_X_CHANGE -= X_CHANGE;
     }
-    else if(key == 117 ) { //'u' -- about the x axis
+    else if(key == 'w' || key=='W' ) { // about the x axis
         DELTA_Y_CHANGE += Y_CHANGE;
     }
-    else if(key == 100) { //'d' -- about the x axis
+    else if(key =='s' || key=='S') { // about the x axis
         DELTA_Y_CHANGE -= Y_CHANGE;
     }
 }
