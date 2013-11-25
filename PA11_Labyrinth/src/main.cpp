@@ -28,7 +28,7 @@ double X_CHANGE = 0.05, Y_CHANGE = 0.05; //step change for paddle using keyboard
 int NUMBER_OF_WINS;
 bool paused = false;
 
-int AmbientDefault = 2.8;
+int AmbientDefault = 1.8;
 
 struct Light
 {
@@ -43,34 +43,33 @@ struct Light
 
 void Light::Init()
 {
-    specularVec[0] = 2.0;
-    specularVec[1] = 2.0;
-    specularVec[2] = 2.0;
+    specularVec[0] = 5.8;
+    specularVec[1] = 5.8;
+    specularVec[2] = 5.8;
     
     ambientVec[0] = AmbientDefault;
     ambientVec[1] = AmbientDefault;
     ambientVec[2] = AmbientDefault;
     
-    diffuseVec[0] = 1.8;
-    diffuseVec[1] = 1.8;
-    diffuseVec[2] = 1.8;
+    diffuseVec[0] = 2.0;
+    diffuseVec[1] = 2.0;
+    diffuseVec[2] = 2.0;
     
-    lightVec[0] = 10.0;
-    lightVec[1] = 10.0;
-    lightVec[2] = 20.0;
+    lightVec[0] = 100.0;
+    lightVec[1] = 700.0;
+    lightVec[2] = 100.0;
 }
 
 
 //--Managers
 MeshManager meshManager;
 ShaderManager *shaderManager;
-ShaderManager *shaderManager_holes; //three kinds of holes: start, end, trap
 int holeType; //used for coloring holes
 int level; //what the current difficulty level is
 vector<int> numOfHoles; //used for game levels
 
 //--Textures Handles
-GLuint black_marble, white_marble, metal, black_solid, red_solid, green_solid;
+GLuint black_marble, white_marble, metal, black_solid, red_solid, green_solid, brown_solid;
 GLint textureCoord;
 GLint textureUnit;
 
@@ -181,6 +180,7 @@ int main(int argc, char **argv)
     char red_solid_file[] = "../textures/red.png";
     char green_solid_file[] = "../textures/green.png";
     char black_solid_file[] = "../textures/black.png";
+    char brown_solid_file[] = "../textures/brown.png";
 
     //load textures
     Magick::InitializeMagick(*argv);
@@ -191,6 +191,7 @@ int main(int argc, char **argv)
     loadTexture(red_solid_file, red_solid);
     loadTexture(black_solid_file, black_solid);
     loadTexture(green_solid_file, green_solid);
+    loadTexture(brown_solid_file, brown_solid);
 
     GLenum status = glewInit(); //check glut status
     if( status != GLEW_OK)
@@ -389,6 +390,11 @@ void render()
         //enable the shader program
         shaderManager->useProgram();
 
+        glUniform3fv(ambient_data, 1, Lighting.ambientVec);
+        glUniform3fv(diffuse_data, 1, Lighting.diffuseVec);
+        glUniform3fv(specular_data, 1, Lighting.specularVec);
+        glUniform3fv(light_position, 1, Lighting.lightVec);
+
         //upload the matrix to the shader
         glUniformMatrix4fv(scene_mv, 1, GL_FALSE, glm::value_ptr(mv));         //model view
         glUniformMatrix4fv(scene_p, 1, GL_FALSE, glm::value_ptr(projection));  //projection
@@ -403,7 +409,7 @@ void render()
 
         //set the textures
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, black_marble);
+        glBindTexture(GL_TEXTURE_2D, brown_solid);
         glUniform1i(textureUnit, 0);
 
         glBindBuffer(GL_ARRAY_BUFFER, meshManager.getHandle("maze wall"));
